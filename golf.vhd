@@ -24,13 +24,14 @@ end golf;
 architecture Behavioral of golf is
     constant ball_size : integer := 8;
     constant wall_width : integer := 5;
+    
     constant ball_speed : std_logic_vector (10 downto 0) := conv_std_logic_vector (6, 11);
     signal ball_on : std_logic;
     signal wall_on : std_logic;
-    signal game_on : std_logic := '1'; --ball is not in hole, ball in hole, set to 0
+    signal game_on : std_logic := '1'; --ball is not in hole, when ball in hole set to 0
     --current ball position, initialized to center of screen for now
-    signal ball_x : std_logic_vector(10 downto 0) := conv_std_logic_vector(400, 11);
-    signal ball_y : std_logic_vector(10 downto 0) := conv_std_logic_vector(300, 11);
+    signal ball_x : std_logic_vector(10 downto 0) := conv_std_logic_vector(200, 11);
+    signal ball_y : std_logic_vector(10 downto 0) := conv_std_logic_vector(450, 11);
 
     signal ball_x_motion, ball_y_motion : std_logic_vector(10 downto 0) := conv_std_logic_vector(0, 11);
 
@@ -83,8 +84,8 @@ begin
             (pixel_row >=300) and (pixel_row <= 305) then
             wall_on <= '1';
        
-        elsif (pixel_col >= 100) and (pixel_col <= 105) and
-            (pixel_row >=100) and (pixel_row <= 500) then
+        elsif (pixel_col >= 700) and (pixel_col <= 705) and
+            (pixel_row >=100) and (pixel_row <= 300) then
             wall_on <= '1';
         else
             wall_on <= '0';
@@ -92,12 +93,36 @@ begin
     end process;
     
     mball : process
-    
+        variable temp : integer;
     begin
         wait until rising_edge(v_sync);
+        ball_y_motion <= "00000000100"; --ball speed
+        ball_x_motion <= "00000000100";
+        if hit = '1' and game_on = '1' then
+            if hit_up = '1' then
+                temp := 12;    --temp = 12
+                for I in 0 to 100 loop
+                    ball_y <= ball_y - ball_y_motion;
+                    temp := temp - 1;
+                    if temp = 0 then
+                        ball_y_motion <= "00000000000";
+                    end if;
+                end loop;                                
+            elsif hit_down = '1' then
+                for I in 0 to 12 loop
+                    ball_y <= ball_y + ball_y_motion;
+                end loop;
+            elsif hit_left = '1' then               
+                for I in 0 to 12 loop
+                    ball_x <= ball_x - ball_x_motion;
+                end loop;
+            elsif hit_right = '1' then
+                for I in 0 to 12 loop
+                    ball_x <= ball_x + ball_x_motion;
+                end loop;
+            end if;
+                        
+        end if;
         
-        
-    end process;
-    
-  
+    end process; 
 end behavioral;
