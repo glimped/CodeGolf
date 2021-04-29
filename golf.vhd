@@ -29,12 +29,14 @@ architecture Behavioral of golf is
     signal ball_on : std_logic;
     signal wall_on : std_logic;
     signal game_on : std_logic := '1'; --ball is not in hole, when ball in hole set to 0
-    --current ball position, initialized to center of screen for now
+    --current ball position, initialized to bottom of golf course
     signal ball_x : std_logic_vector(10 downto 0) := conv_std_logic_vector(200, 11);
     signal ball_y : std_logic_vector(10 downto 0) := conv_std_logic_vector(450, 11);
 
     signal ball_x_motion, ball_y_motion : std_logic_vector(10 downto 0) := conv_std_logic_vector(0, 11);
-
+    
+    signal direction : std_logic_vector (3 downto 0); --stores directional inputs
+    
 
 begin
     red <= NOT wall_on;
@@ -64,6 +66,7 @@ begin
     walldraw : process (pixel_row, pixel_col) is
         --variable wx, wy : std_logic_vector (10 downto 0);
     begin
+        --drawing the golf course
         if  (pixel_col >= 100) and (pixel_col <= 700) and
             (pixel_row >= 100) and (pixel_row <= 105) then
             wall_on <= '1';            
@@ -93,36 +96,39 @@ begin
     end process;
     
     mball : process
-        variable temp : integer;
+        variable frameCounter : integer := 12; --intentionally initialized to a value too high to begin loop 
+                                                --so the ball does not move before input is given
+        
     begin
         wait until rising_edge(v_sync);
-        ball_y_motion <= "00000000100"; --ball speed
+        ball_y_motion <= "00000000100"; --ball speed = 4 pixels
         ball_x_motion <= "00000000100";
-        if hit = '1' and game_on = '1' then
+
+            --setting direction signal, not yet fully implemented into ball movement
+            --each bit corresponds to a direction and allows for diagonal movement ex "1010" is up-left
             if hit_up = '1' then
-                temp := 12;    --temp = 12
-                for I in 0 to 100 loop
-                    ball_y <= ball_y - ball_y_motion;
-                    temp := temp - 1;
-                    if temp = 0 then
-                        ball_y_motion <= "00000000000";
-                    end if;
-                end loop;                                
-            elsif hit_down = '1' then
-                for I in 0 to 12 loop
-                    ball_y <= ball_y + ball_y_motion;
-                end loop;
-            elsif hit_left = '1' then               
-                for I in 0 to 12 loop
-                    ball_x <= ball_x - ball_x_motion;
-                end loop;
-            elsif hit_right = '1' then
-                for I in 0 to 12 loop
-                    ball_x <= ball_x + ball_x_motion;
-                end loop;
+                direction(0 downto 0) <= "1";
+            end if;           
+            if hit_down = '1' then
+                direction(1 downto 1) <= "1";
             end if;
-                        
+            if hit_left = '1' then               
+                direction(2 downto 2) <= "1";
+            end if;
+            if hit_right = '1' then
+                direction(3 downto 3) <= "1";
+            end if;   
+        --should only satisfy condition to begin loop when hit button is pressed and game is in action                      
+        if hit = '1' and game_on = '1' then
+             frameCounter := 0; --frameCounter gets set to 0 when hit button pressed, loop condition is now satisfied
         end if;
         
+        --ball should move 4 pixels up for 12 frames, but keep getting 'loop does not converge' error
+        --keeping loop out of 'hit' if statement because it would just keep running through the loop as long as hit button was pressed
+        --instead of for a set amount of frames
+        while (frameCounter < 12) loop
+            ball_y <= ball_y - ball_y_motion;
+            frameCounter := frameCounter + 1;
+        end loop;
     end process; 
 end behavioral;
